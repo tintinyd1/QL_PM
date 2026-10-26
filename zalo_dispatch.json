@@ -1,0 +1,16 @@
+[
+  {
+    "className": "10A1",
+    "monitorName": "Nguyễn Văn An",
+    "monitorPhone": "0912345678",
+    "monitorEmail": "nguyenvanan.10a1@gmail.com",
+    "message": "Ngày mai lớp thực hành Tiết 1, 2 (Sáng: 07:00 - 08:35) tại phòng Phòng Máy 1 vị trí Tầng 2 - Dãy nhà B. (Môn: Tin học. Bài dạy: Thực hành mạng máy tính. GV: Thầy Thanh)."
+  },
+  {
+    "className": "10A2",
+    "monitorName": "Trần Thị Bình",
+    "monitorPhone": "0987654321",
+    "monitorEmail": "tranthibinh.10a2@gmail.com",
+    "message": "Ngày mai lớp thực hành Tiết 3, 4 (Sáng: 08:50 - 10:25) tại phòng Phòng Máy 1 vị trí Tầng 2 - Dãy nhà B. (Môn: Tin học. Bài dạy: Tạo trang web đơn giản. GV: Cô Lan)."
+  }
+]

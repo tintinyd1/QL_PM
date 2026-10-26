@@ -1,0 +1,165 @@
+/* styles.css - Custom Styling & Print Optimizations for LabMaster 2026-2027 */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+:root {
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #f8fafc;
+  color: #0f172a;
+  overflow-x: hidden;
+}
+
+/* Custom Sleek Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Glassmorphism Classes */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.glass-nav {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(241, 245, 249, 0.9);
+}
+
+/* Dropdown Animation */
+.animate-dropdown {
+  animation: dropdownFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: top;
+}
+
+@keyframes dropdownFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Slot cell hover & transition */
+.timetable-slot {
+  transition: all 0.15s ease-in-out;
+}
+
+.timetable-slot:hover {
+  box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.08);
+}
+
+/* Pulse animation for current period */
+@keyframes currentPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+  }
+}
+
+.active-period-pulse {
+  animation: currentPulse 2s infinite ease-in-out;
+}
+
+/* Print Styles for Sổ Thực Hành A4 Landscape */
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 8mm 10mm;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    font-size: 9pt;
+  }
+
+  /* Hide all non-printable elements */
+  .no-print,
+  header,
+  footer,
+  nav,
+  .print-hidden,
+  #topBar,
+  #statsBar,
+  #controlsToolbar,
+  #viewTabs,
+  #quickFab,
+  .modal-backdrop,
+  .btn,
+  button {
+    display: none !important;
+  }
+
+  /* Show print container */
+  #printSection {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 auto !important;
+  }
+
+  /* Table styling for print */
+  table.print-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin-bottom: 6mm !important;
+  }
+
+  table.print-table th,
+  table.print-table td {
+    border: 1px solid #1e293b !important;
+    padding: 3px 5px !important;
+    text-align: center;
+    vertical-align: middle;
+    font-size: 8.5pt;
+    line-height: 1.25;
+  }
+
+  table.print-table th {
+    background-color: #f1f5f9 !important;
+    font-weight: bold;
+    color: #000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .print-page-break {
+    page-break-before: always;
+  }
+}
