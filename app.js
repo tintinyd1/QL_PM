@@ -14,12 +14,21 @@
   const STORAGE_KEY = 'LABMASTER_DATA_V3';
   const CURRENT_USER_KEY = 'LABMASTER_CURRENT_USER_V3';
 
+  const DEFAULT_COMMENT_TEMPLATES = [
+    'Máy hoạt động tốt, phòng sạch sẽ',
+    'Một số máy hỏng',
+    'Đã ngắt điện, thiết bị nguyên vẹn',
+    'Một số máy mất kết nối Internet',
+    'Chuột / Bàn phím chập chờn một vài máy',
+    'Phòng máy sạch sẽ, ngăn nắp'
+  ];
+
   let appState = {
     schoolYear: '2026 - 2027',
     yearStartDate: '2026-09-07',
     yearEndDate: '2027-05-31',
-    currentWeekNumber: 7,
-    selectedWeekNumber: 7,
+    currentWeekNumber: 8,
+    selectedWeekNumber: 8,
     selectedRoomId: '',
     activeView: 'today',        // Mặc định mở trang tra cứu lịch hôm nay
     adminActiveSubTab: 'rooms',
@@ -31,6 +40,7 @@
     users: [],
     bookings: [],
     issues: [],
+    commentTemplates: [...DEFAULT_COMMENT_TEMPLATES],
     weekCustomNames: {},
     lockedWeeks: {},            // { [weekNum]: boolean } (true = locked, false = unlocked)
     notificationSettings: null, // Cấu hình tự động gửi thông báo 21h
@@ -156,7 +166,16 @@
         appState.users = parsed.users && parsed.users.length ? parsed.users : (initial.users || []);
         appState.bookings = parsed.bookings || [];
         appState.issues = parsed.issues || [];
+        appState.commentTemplates = (parsed.commentTemplates && Array.isArray(parsed.commentTemplates) && parsed.commentTemplates.length > 0)
+          ? parsed.commentTemplates
+          : (initial.commentTemplates || [...DEFAULT_COMMENT_TEMPLATES]);
         appState.weekCustomNames = parsed.weekCustomNames || initial.weekCustomNames || {};
+        // Dọn dẹp tên ảo mẫu nếu có trong dữ liệu cũ để tên tuần hiển thị chuẩn xác
+        if (appState.weekCustomNames[7] === 'Tuần 7: Thi đua dạy tốt - học tốt') delete appState.weekCustomNames[7];
+        if (appState.weekCustomNames[1] === 'Tuần 1: Khởi động năm học mới') delete appState.weekCustomNames[1];
+        if (appState.weekCustomNames[18] === 'Tuần 18: Ôn tập & Kiểm tra học kỳ 1') delete appState.weekCustomNames[18];
+        if (appState.weekCustomNames[19] === 'Tuần 19: Kết thúc học kỳ 1') delete appState.weekCustomNames[19];
+        if (appState.weekCustomNames[35] === 'Tuần 35: Ôn tập & Kiểm tra cuối năm') delete appState.weekCustomNames[35];
         appState.lockedWeeks = parsed.lockedWeeks || {};
 
         appState.notificationSettings = parsed.notificationSettings || initial.notificationSettings || {
@@ -248,6 +267,7 @@
     ];
     appState.bookings = []; // Sạch hoàn toàn
     appState.issues = [];
+    appState.commentTemplates = initial.commentTemplates || [...DEFAULT_COMMENT_TEMPLATES];
     appState.weekCustomNames = initial.weekCustomNames || {};
     appState.lockedWeeks = {};
     appState.notificationSettings = initial.notificationSettings || {
@@ -282,6 +302,7 @@
           users: appState.users,
           bookings: appState.bookings,
           issues: appState.issues,
+          commentTemplates: appState.commentTemplates,
           weekCustomNames: appState.weekCustomNames,
           lockedWeeks: appState.lockedWeeks,
           notificationSettings: appState.notificationSettings,
@@ -313,6 +334,7 @@
         users: appState.users,
         bookings: appState.bookings,
         issues: appState.issues,
+        commentTemplates: appState.commentTemplates,
         weekCustomNames: appState.weekCustomNames,
         lockedWeeks: appState.lockedWeeks,
         notificationSettings: appState.notificationSettings,
@@ -351,8 +373,8 @@
 
       const dateRangeStr = `${sDay}/${sMon}/${sYear} - ${eDay}/${eMon}/${eYear}`;
       const customTitle = appState.weekCustomNames[wNum];
-      const baseLabel = `Tuần (${dateRangeStr})`;
-      const label = customTitle ? `${customTitle} (${sDay}/${sMon} - ${eDay}/${eMon})` : baseLabel;
+      const baseLabel = `Tuần ${wNum} (${dateRangeStr})`;
+      const label = customTitle ? `${customTitle} (${sDay}/${sMon} - ${eDay}/${eMon})` : `Tuần ${wNum} (${dateRangeStr})`;
       const fullLabel = customTitle ? `${customTitle} (${dateRangeStr})` : `Tuần ${wNum} (${dateRangeStr})`;
 
       const dayDates = {};
@@ -385,6 +407,28 @@
       curMonday.setDate(curMonday.getDate() + 7);
       wNum++;
     }
+
+    // Tự động xác định tuần hiện tại theo ngày thực tế hôm nay
+    const now = new Date();
+    const tY = now.getFullYear();
+    const tM = String(now.getMonth() + 1).padStart(2, '0');
+    const tD = String(now.getDate()).padStart(2, '0');
+    const todayIso = `${tY}-${tM}-${tD}`;
+
+    const matched = appState.generatedWeeks.find(w => todayIso >= w.startDate && todayIso <= w.endDate);
+    if (matched) {
+      appState.currentWeekNumber = matched.weekNumber;
+    } else if (appState.generatedWeeks.length > 0) {
+      if (todayIso < appState.generatedWeeks[0].startDate) {
+        appState.currentWeekNumber = 1;
+      } else if (todayIso > appState.generatedWeeks[appState.generatedWeeks.length - 1].endDate) {
+        appState.currentWeekNumber = appState.generatedWeeks.length;
+      }
+    }
+
+    appState.generatedWeeks.forEach(w => {
+      w.isCurrent = (w.weekNumber === appState.currentWeekNumber);
+    });
   }
 
   // ================= AUTO-LOCK & WEEK STATUS LOGIC =================
@@ -422,6 +466,15 @@
         const hh = String(now.getHours()).padStart(2, '0');
         const mm = String(now.getMinutes()).padStart(2, '0');
         clockEl.textContent = `${d}/${m}/${y} - ${hh}:${mm}`;
+      }
+
+      // Giữ badge Tuần ở header trên cùng luôn hiển thị chính xác Tuần hiện tại của ngày hôm nay
+      const headerWeekBadge = document.getElementById('headerWeekBadge');
+      if (headerWeekBadge && appState.generatedWeeks.length > 0) {
+        const curW = appState.generatedWeeks.find(w => w.weekNumber === appState.currentWeekNumber) || appState.generatedWeeks[0];
+        if (curW) {
+          headerWeekBadge.textContent = curW.fullLabel;
+        }
       }
 
       // TỰ ĐỘNG GỬI THÔNG BÁO THEO LỊCH CÀI ĐẶT CỦA ADMIN
@@ -648,7 +701,9 @@
         appState.rooms.map(r => `<option value="${r.name}">${r.name}</option>`).join('');
     }
 
-    const baseDate = new Date(2026, 9, 21); // Thứ 4, 21/10/2026
+    // Dùng ngày thực tế hôm nay
+    const baseDate = new Date();
+    baseDate.setHours(0, 0, 0, 0);
     const targetDate = new Date(baseDate);
     targetDate.setDate(baseDate.getDate() + appState.todayDayOffset);
 
@@ -666,8 +721,14 @@
       titleEl.textContent = `${dayLabel}, Ngày ${dateFormatted}`;
     }
 
-    const targetIso = targetDate.toISOString().slice(0, 10);
-    const matchedWeek = appState.generatedWeeks.find(w => targetIso >= w.startDate && targetIso <= w.endDate) || appState.generatedWeeks[6];
+    const tY = targetDate.getFullYear();
+    const tM = String(targetDate.getMonth() + 1).padStart(2, '0');
+    const tD = String(targetDate.getDate()).padStart(2, '0');
+    const targetIso = `${tY}-${tM}-${tD}`;
+
+    const matchedWeek = appState.generatedWeeks.find(w => targetIso >= w.startDate && targetIso <= w.endDate) ||
+      (appState.generatedWeeks.length > 0 ? appState.generatedWeeks[0] : null);
+
     const weekTitleEl = document.getElementById('todayHeaderWeekTitle');
     if (weekTitleEl && matchedWeek) {
       weekTitleEl.textContent = matchedWeek.customTitle ? `${matchedWeek.customTitle} (${matchedWeek.dateRangeStr})` : matchedWeek.fullLabel;
@@ -3062,13 +3123,16 @@
     if (!curWeek) return;
 
     const selectedWeekLabel = document.getElementById('selectedWeekLabel');
-    if (selectedWeekLabel) selectedWeekLabel.textContent = curWeek.label;
+    if (selectedWeekLabel) selectedWeekLabel.textContent = curWeek.fullLabel;
 
     const modalSelectedText = document.getElementById('modalSelectedWeekText');
-    if (modalSelectedText) modalSelectedText.textContent = curWeek.label;
+    if (modalSelectedText) modalSelectedText.textContent = curWeek.fullLabel;
 
     const headerWeekBadge = document.getElementById('headerWeekBadge');
-    if (headerWeekBadge) headerWeekBadge.textContent = curWeek.fullLabel;
+    if (headerWeekBadge && appState.generatedWeeks.length > 0) {
+      const liveCurrentWeek = appState.generatedWeeks.find(w => w.weekNumber === appState.currentWeekNumber) || appState.generatedWeeks[0];
+      if (liveCurrentWeek) headerWeekBadge.textContent = liveCurrentWeek.fullLabel;
+    }
 
     renderDropdownListItems('weekDropdownList', '');
     renderDropdownListItems('modalWeekDropdownList', '');
@@ -3780,6 +3844,89 @@
     showToast('Đã hủy đăng ký tiết học thành công.');
   };
 
+  // ================= MẪU NHẬN XÉT KHI KÝ NHẬN & BÀN GIAO =================
+  window.renderSignCommentTemplates = function () {
+    const container = document.getElementById('signCommentChipsList');
+    if (!container) return;
+
+    if (!appState.commentTemplates || appState.commentTemplates.length === 0) {
+      container.innerHTML = '<span class="text-[11px] text-slate-400 italic py-1">Chưa có mẫu nhận xét nào. Nhập vào ô bên dưới để thêm mẫu mới.</span>';
+      return;
+    }
+
+    container.innerHTML = appState.commentTemplates.map((tpl, idx) => {
+      return '<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-white hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 border border-slate-200 hover:border-emerald-300 shadow-xs transition group">' +
+        '<span onclick="selectCommentTemplateByIdx(' + idx + ')" class="cursor-pointer select-none" title="Bấm để đưa nhận xét này vào ô ký">' + tpl + '</span>' +
+        '<button type="button" onclick="deleteCommentTemplate(' + idx + '); event.stopPropagation();" title="Xóa mẫu nhận xét này" class="w-4 h-4 rounded-full flex items-center justify-center text-slate-300 hover:text-white hover:bg-red-500 transition ml-0.5">' +
+          '<i class="fa-solid fa-xmark text-[9px]"></i>' +
+        '</button>' +
+      '</span>';
+    }).join('');
+  };
+
+  window.selectCommentTemplateByIdx = function (idx) {
+    if (!appState.commentTemplates || !appState.commentTemplates[idx]) return;
+    selectCommentTemplate(appState.commentTemplates[idx]);
+  };
+
+  window.selectCommentTemplate = function (text) {
+    const input = document.getElementById('signStatusInput');
+    if (!input) return;
+    const curVal = input.value.trim();
+    // Nếu ô nhập rỗng hoặc đang là câu mặc định ban đầu, thay thế trực tiếp
+    if (!curVal || curVal === 'Máy hoạt động tốt, phòng sạch sẽ' || curVal === 'Đã ngắt điện, thiết bị nguyên vẹn') {
+      input.value = text;
+    } else {
+      // Nếu giáo viên đã chọn hoặc nhập nội dung trước đó, ghép thêm bằng dấu chấm phẩy
+      input.value = curVal + '; ' + text;
+    }
+    input.focus();
+  };
+
+  window.clearSignCommentInput = function () {
+    const input = document.getElementById('signStatusInput');
+    if (input) {
+      input.value = '';
+      input.focus();
+    }
+  };
+
+  window.addNewCommentTemplate = function () {
+    const input = document.getElementById('newCommentTemplateInput');
+    if (!input) return;
+    const val = input.value.trim();
+    if (!val) {
+      alert('Vui lòng nhập nội dung mẫu nhận xét cần thêm!');
+      input.focus();
+      return;
+    }
+
+    if (!Array.isArray(appState.commentTemplates)) {
+      appState.commentTemplates = [...DEFAULT_COMMENT_TEMPLATES];
+    }
+
+    if (appState.commentTemplates.includes(val)) {
+      alert('Mẫu nhận xét này đã tồn tại trong danh sách!');
+      input.focus();
+      return;
+    }
+
+    appState.commentTemplates.push(val);
+    saveState();
+    input.value = '';
+    renderSignCommentTemplates();
+    showToast(`Đã thêm mẫu nhận xét: "${val}"`);
+  };
+
+  window.deleteCommentTemplate = function (index) {
+    if (!Array.isArray(appState.commentTemplates)) return;
+    if (index < 0 || index >= appState.commentTemplates.length) return;
+    const removed = appState.commentTemplates.splice(index, 1)[0];
+    saveState();
+    renderSignCommentTemplates();
+    showToast(`Đã xóa mẫu nhận xét: "${removed}"`);
+  };
+
   // ================= KÝ NHẬN & BÀN GIAO =================
   window.openSignModal = function (bookingId, signType) {
     const booking = appState.bookings.find(b => b.id === bookingId);
@@ -3799,12 +3946,15 @@
 
     document.getElementById('signBookingId').value = bookingId;
     document.getElementById('signType').value = signType;
-    document.getElementById('signInfoLesson').textContent = `${booking.lesson || booking.subject} - Lớp ${booking.className}`;
-    document.getElementById('signInfoSlot').textContent = `${booking.room} • ${booking.dayName} (${booking.session === 'sang' ? 'Sáng' : 'Chiều'}) • Tiết ${booking.period}`;
+    document.getElementById('signInfoLesson').innerHTML = `<i class="fa-solid fa-book-open text-brand-600"></i> <span>${booking.lesson || booking.subject} - Lớp ${booking.className}</span>`;
+    document.getElementById('signInfoSlot').innerHTML = `<i class="fa-solid fa-clock text-slate-400"></i> <span>${booking.room} • ${booking.dayName} (${booking.session === 'sang' ? 'Sáng' : 'Chiều'}) • Tiết ${booking.period}</span>`;
+
+    // Render danh sách mẫu nhận xét có sẵn
+    renderSignCommentTemplates();
 
     if (signType === 'start') {
       document.getElementById('signModalTitle').textContent = 'Ký Nhận Phòng Đầu Giờ';
-      document.getElementById('signStatusInput').value = booking.statusStart || '36/36 máy hoạt động tốt, phòng sạch sẽ';
+      document.getElementById('signStatusInput').value = booking.statusStart || 'Máy hoạt động tốt, phòng sạch sẽ';
     } else {
       document.getElementById('signModalTitle').textContent = 'Ký Bàn Giao Phòng Cuối Giờ';
       document.getElementById('signStatusInput').value = booking.statusEnd || 'Đã ngắt điện, thiết bị nguyên vẹn';

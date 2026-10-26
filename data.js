@@ -9,7 +9,7 @@ window.LAB_INITIAL_DATA = {
   schoolName: 'TRƯỜNG THPT',
   yearStartDate: '2026-09-07',
   yearEndDate: '2027-05-31',
-  currentWeekNumber: 7, // Tuần hiện tại: 19/10/2026 - 25/10/2026
+  currentWeekNumber: 8, // Tuần hiện tại: 26/10/2026 - 01/11/2026
 
   // Cấu hình giờ các tiết học (Admin có thể tự điều chỉnh theo hiệu lệnh trống của trường)
   periodTimes: {
@@ -112,14 +112,18 @@ window.LAB_INITIAL_DATA = {
     }
   ],
 
-  // Tên tùy chỉnh cho các tuần do Quản trị viên đặt (Admin có thể đặt tên cho từng tuần)
-  weekCustomNames: {
-    1: 'Tuần 1: Khởi động năm học mới',
-    7: 'Tuần 7: Thi đua dạy tốt - học tốt',
-    18: 'Tuần 18: Ôn tập & Kiểm tra học kỳ 1',
-    19: 'Tuần 19: Kết thúc học kỳ 1',
-    35: 'Tuần 35: Ôn tập & Kiểm tra cuối năm'
-  },
+  // Tên tùy chỉnh cho các tuần do Quản trị viên đặt (Mặc định để trống để hiển thị Tuần 1, Tuần 2,... chuẩn xác)
+  weekCustomNames: {},
+
+  // Danh sách các mẫu nhận xét có sẵn khi ký sổ thực hành
+  commentTemplates: [
+    'Máy hoạt động tốt, phòng sạch sẽ',
+    'Một số máy hỏng',
+    'Đã ngắt điện, thiết bị nguyên vẹn',
+    'Một số máy mất kết nối Internet',
+    'Chuột / Bàn phím chập chờn một vài máy',
+    'Phòng máy sạch sẽ, ngăn nắp'
+  ],
 
   // Cấu hình thông báo tự động cho lớp trưởng (Nhóm Zalo & Email)
   notificationSettings: {
